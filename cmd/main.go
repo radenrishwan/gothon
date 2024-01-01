@@ -1,10 +1,15 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
 	"github.com/radenrishwan/gothon"
+)
+
+var (
+	version = flag.String("version", "0.0.1", "gothon version")
 )
 
 func main() {

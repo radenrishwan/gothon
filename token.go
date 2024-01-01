@@ -52,8 +52,8 @@ const (
 	FOR   TokenType = "for"
 	WHILE TokenType = ""
 
-	OR  TokenType = "|"
-	AND TokenType = "&"
+	OR  TokenType = "or"
+	AND TokenType = "and"
 
 	VAR TokenType = "var"
 
@@ -79,4 +79,23 @@ func NewToken(t TokenType, lexeme string, literal any, line int) Token {
 
 func (t Token) String() string {
 	return fmt.Sprintf("type: %s, lexeme: \"%s\", literal: %v at line: %d", t.Type, t.Lexeme, t.Literal, t.Line)
+}
+
+var keywords = map[string]TokenType{
+	"and":    AND,
+	"class":  CLASS,
+	"else":   ELSE,
+	"false":  FALSE,
+	"for":    FOR,
+	"fun":    FUN,
+	"if":     IF,
+	"nil":    NIL,
+	"or":     OR,
+	"print":  PRINT,
+	"return": RETURN,
+	"super":  SUPER,
+	"this":   THIS,
+	"true":   TRUE,
+	"var":    VAR,
+	"while":  WHILE,
 }

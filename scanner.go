@@ -1,7 +1,5 @@
 package gothon
 
-import "log"
-
 type Scanner struct {
 	source  string
 	tokens  []Token
@@ -30,6 +28,9 @@ func (s *Scanner) ScanTokens() []Token {
 		// check line
 		case '\n':
 			s.line++
+		case ' ':
+		case '\r':
+		case '\t':
 		case '(':
 			s.addTokenWithoutLiteral(LEFT_PAREN)
 		case ')':
@@ -41,6 +42,7 @@ func (s *Scanner) ScanTokens() []Token {
 		case ',':
 			s.addTokenWithoutLiteral(COMMA)
 		case '.':
+			// TODO: check if before is not a number & after is not a number, if so, error
 			s.addTokenWithoutLiteral(DOT)
 		case '-':
 			s.addTokenWithoutLiteral(MINUS)
@@ -84,9 +86,52 @@ func (s *Scanner) ScanTokens() []Token {
 			} else {
 				s.addTokenWithoutLiteral(GREATER)
 			}
+		case '"':
+			for s.peek() != '"' && !s.isAtEnd() {
+				if s.peek() == '\n' {
+					s.line++
+				}
+				s.advance()
+			}
+
+			if s.isAtEnd() {
+				Error(s.line, "unterminated string")
+			}
+
+			s.advance()
+
+			value := s.source[s.start+1 : s.current-1]
+			s.addToken(STRING, value)
+		case 'o':
+			if s.match('r') {
+				s.addTokenWithoutLiteral(OR)
+			}
 		default:
-			// TODO: change to error later
-			log.Println("unexpected token: ", string(c))
+			// check if it is a digit
+			if isDigit(c) {
+				s.number()
+
+				continue
+			}
+
+			if isAlpha(c) {
+				for isAlphaNumeric(s.peek()) {
+					s.advance()
+				}
+
+				text := s.source[s.start:s.current]
+				tokenType := keywords[text]
+
+				if tokenType == "" {
+					tokenType = IDENTIFIER
+				}
+
+				s.addTokenWithoutLiteral(tokenType)
+
+				continue
+			}
+
+			Error(s.line, "unexpected character")
 		}
 	}
 
@@ -134,4 +179,53 @@ func (s *Scanner) peek() byte {
 	}
 
 	return s.source[s.current]
+}
+
+func (s *Scanner) peekNext() byte {
+	if (s.current + 1) >= len(s.source) {
+		return '\000'
+	}
+
+	return s.source[s.current+1]
+}
+
+func (s *Scanner) number() {
+	for isDigit(s.peek()) {
+		s.advance()
+	}
+
+	// check if there is a fraction
+	if s.peek() == '.' && isDigit(s.peekNext()) {
+		s.advance()
+
+		for isDigit(s.peek()) {
+			s.advance()
+		}
+	}
+
+	s.addToken(NUMBER, s.source[s.start:s.current])
+}
+
+func isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
+func isAlpha(c byte) bool {
+	if c >= 'a' && c <= 'z' {
+		return true
+	}
+
+	if c >= 'A' && c <= 'Z' {
+		return true
+	}
+
+	if c == '_' {
+		return true
+	}
+
+	return false
+}
+
+func isAlphaNumeric(c byte) bool {
+	return isAlpha(c) || isDigit(c)
 }
